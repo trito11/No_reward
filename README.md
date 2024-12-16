@@ -3,7 +3,7 @@
 Python 3.8.20
 ## Running Commands
 
-Run the following commands to reproduce our main results 
+Run the following commands to reproduce main results in [Learning Long-Term Reward Redistribution via Randomized Return Decomposition](https://arxiv.org/abs/2111.13485)
 ```bash
 python train.py --tag='RRD Ant-v2' --alg=rrd --basis_alg=sac --env=Ant-v2
 python train.py --tag='RRD-L(RD) Ant-v2' --alg=rrd --basis_alg=sac --rrd_bias_correction=True --env=Ant-v2
