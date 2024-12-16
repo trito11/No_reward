@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: train.py with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--tag","Atari_256_32",
+                "--alg", "rrd_atari_pytorch",
+                "--basis_alg", "dqn",
+                "--code","pytorch",
+                "--rrd_bias_correction", "True",
+                "--env", "Assault",
+                "--rrd_batch_size","1024",
+                "--rrd_sample_size","32",
+
+
+            ]
+        }
+    ]
+}
+
+ 
