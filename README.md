@@ -1,8 +1,7 @@
 
 ## Requirements
 Python 3.8.20
-## Overleaf
-[overleaf](https://www.overleaf.com/project/669acf6ca3290cedbede9cf4)
+
 ## Running Commands
 
 Run the following commands to reproduce main results in [Learning Long-Term Reward Redistribution via Randomized Return Decomposition](https://arxiv.org/abs/2111.13485)
