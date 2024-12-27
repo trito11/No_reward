@@ -81,6 +81,8 @@ def get_args():
         parser.add_argument('--eps_decay', help='the number of steps to decay epsilon', type=np.int32, default=1000)
         parser.add_argument('--chi2_coeff', help='the number of steps to decay epsilon', type=np.float32, default=0.5)
         parser.add_argument('--chi2_coeff1', help='the number of steps to decay epsilon', type=np.float32, default=0.5)
+        parser.add_argument('--beta', help='beta', type=np.float32, default=0.2)
+        parser.add_argument('--clip_score', help='the number of steps to decay epsilon', type=np.float32, default=5)
 
         parser.add_argument('--optimizer', help='the optimizer to use', type=str, default='adam', choices=['adam', 'rmsprop'])
         args, _ = parser.parse_known_args()
