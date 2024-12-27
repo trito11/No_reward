@@ -379,7 +379,7 @@ def RRD_mujoco_pytorch_xql(args):
                 
 
                 self.q_1=self.q_net1( self.obs_ph,self.rrd_acts_ph) 
-                target = (1.0 - self.done_ph) * self.args.gamma * self.q_t_1
+                target = (1.0 - self.done_ph) * self.args.gamma * self.v_t
                 rrd_rews_pred = self.q_1 - target 
                 self.rrd = rrd_rews_pred.mean(dim=1)#
                 criterion = nn.SmoothL1Loss()
@@ -420,6 +420,7 @@ def RRD_mujoco_pytorch_xql(args):
                 self.q_v=self.q_net1(self.obs_ph,self.rrd_acts_ph) 
                 self.v = self.value(self.obs_ph)
                 z=(self.q_v.detach()-self.v)/ self.beta
+                wandb.log({"Z":z})
                 # exp_adv = torch.exp(adv / self.beta)
                 if self.clip_score is not None:
                     z = torch.clamp(z ,max=self.clip_score)
