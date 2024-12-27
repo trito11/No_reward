@@ -229,8 +229,8 @@ def RRD_mujoco_pytorch_xql(args):
             self.r_var = torch.tensor(0.0, dtype=torch.float64).to(device)
             self.alpha=self.args.alpha
             self.target_clipping=False
-            self.clip_score=10
-            self.beta=1
+            self.clip_score=args.clip_score
+            self.beta=args.beta
 
             self.train_info_q = {
             'Q_loss': self.q_loss.item()
