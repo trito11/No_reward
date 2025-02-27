@@ -221,7 +221,7 @@ def RRD_mujoco_pytorch(args):
             # Calculate Q-value for next state-action pair
             q_value_next = self._calculate_q_value(next_obs_ph, next_acts)
  
-            # Reward calculation: r = Q(s, a) - γ * Q(s', a')
+            # Reward calculation: r = Q(s, a) - γ * V(s')
             reward = q_value - self.args.gamma * q_value_next
  
             # Reshape if input was flattened
