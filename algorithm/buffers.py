@@ -371,6 +371,7 @@ class TrajectoryReplayBuffer(BaseBuffer):
         self,
         trajectory_size: int,
         buffer_size: int,
+        max_eps_len: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
         device: Union[th.device, str] = "auto",
@@ -383,6 +384,7 @@ class TrajectoryReplayBuffer(BaseBuffer):
         self.eps = 0
 
         # Adjust buffer size
+        self.max_eps_len = max_eps_len
         self.buffer_size = max(buffer_size // n_envs, 1)
         self.trajectory_size = trajectory_size
 
@@ -470,11 +472,20 @@ class TrajectoryReplayBuffer(BaseBuffer):
             self.timeouts[self.eps][self.pos] = np.array([info.get("TimeLimit.truncated", False) for info in infos])
 
         self.pos += 1
-        if  "final_info" in infos:
+        if  "final_info" in infos or self.pos == self.max_eps_len:
             self.lenght[self.eps] = self.pos
+            # print(self.rewards[self.eps].shape)
+            # print(self.rewards.shape)
+            # print()
+
+
+            # exit()
             # print(self.pos)
             # print(infos["final_info"][0]["episode"]["l"])
-            self.eps_rewards[self.eps] = infos["final_info"][0]["episode"]["r"]/infos["final_info"][0]["episode"]["l"]
+            # self.eps_rewards[self.eps] = infos["final_info"][0]["episode"]["r"]/infos["final_info"][0]["episode"]["l"]
+            self.eps_rewards[self.eps] = np.sum(self.rewards[self.eps])/self.pos
+
+
             # print(infos["final_info"][0]["episode"]["r"])
             # print(self.eps_rewards[self.eps])
             self.eps += 1
@@ -505,13 +516,15 @@ class TrajectoryReplayBuffer(BaseBuffer):
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
+
             eps_id = np.random.randint(self.trajectory_size)
             eps_len = self.lenght[eps_id]
-            batch_inds = np.random.randint(0, eps_len, size=batch_size)
+            batch_inds =  np.random.choice(eps_len, size=batch_size, replace=(batch_size > eps_len))
+
         else:
             eps_id = np.random.randint(self.eps)
             eps_len = self.lenght[eps_id]
-            batch_inds = np.random.randint(0, eps_len, size=batch_size)
+            batch_inds = np.random.choice(eps_len, size=batch_size, replace=(batch_size > eps_len))
             # if batch_size>=eps_len:
             #     rrd_var_coef_ph = 1
             # else: rrd_var_coef_ph = 1.0-float(batch_size)/eps_len

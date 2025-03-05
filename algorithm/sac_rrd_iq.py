@@ -26,7 +26,7 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "cleanRL"
     """the wandb's project name"""
@@ -40,15 +40,15 @@ class Args:
     """the environment id of the task"""
     total_timesteps: int = 3000000
     """total timesteps of the experiments"""
-    buffer_size: int = int(2e3)
+    buffer_size: int = int(100)
     """the replay memory buffer size"""
-    trajectory_size: int = int(1e3)
+    trajectory_size: int = int(1e4)
     """the replay memory buffer size"""
     gamma: float = 0.99
     """the discount factor gamma"""
     tau: float = 0.005
     """target smoothing coefficient (default: 0.005)"""
-    batch_size: int = 512
+    batch_size: int = 64
     """the batch size of sample from the reply memory"""
     learning_starts: int = 5e3
     """timestep to start learning"""
@@ -64,9 +64,13 @@ class Args:
     """Entropy regularization coefficient."""
     autotune: bool = True
     """automatic tuning of the entropy coefficient"""
-    q_coefficient: float = 1
+    q_coefficient: float = 0
 
-    r_coefficient: float = 0.02
+    var_coefficient: float = 1
+
+    max_eps_len:int = 100
+
+    n_eps: int = 4 
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
         if capture_video and idx == 0:
@@ -228,6 +232,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
     rb = TrajectoryReplayBuffer(
         args.trajectory_size,
         args.buffer_size,
+        args.max_eps_len,
         envs.single_observation_space,
         envs.single_action_space,
         device,
@@ -270,14 +275,19 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         obs = next_obs
         # ALGO LOGIC: training.
         if global_step > args.learning_starts:
-            data = rb.sample(args.batch_size)
-          
-            mb_rewards = data.rewards
-            mb_obs = data.observations
-            mb_act = data.actions
-            mb_obs_next = data.next_observations
-            mb_dones = data.dones
-            mb_eps_rewards=data.eps_rewards
+            data = []
+            qf_loss = 0
+            q_loss = 0
+            q_r_loss = 0 
+            for i in range(args.n_eps):
+                data.append(rb.sample(args.batch_size))
+            
+                mb_rewards = data[i].rewards
+                mb_obs = data[i].observations
+                mb_act = data[i].actions
+                mb_obs_next = data[i].next_observations
+                mb_dones = data[i].dones
+                mb_eps_rewards=data[i].eps_rewards
             # print(mb_rewards.shape)
             # print(mb_obs.shape)
             # print(mb_act.shape)
@@ -288,110 +298,110 @@ poetry run pip install "stable_baselines3==2.0.0a1"
             # exit()
 
 
-            pre_rewards = reward_net(mb_obs, mb_act, mb_obs_next)
-
-            # print(pre_rewards.shape)
-
-            re_loss = F.mse_loss(torch.mean(pre_rewards), torch.mean(mb_eps_rewards))
-            # print(loss_re)
-
-            re_optimizer.zero_grad()
-            re_loss.backward()
-            re_optimizer.step()
-
-
-
-            
-            with torch.no_grad():
-
                 pre_rewards = reward_net(mb_obs, mb_act, mb_obs_next)
 
-                next_state_actions, next_state_log_pi, _ = actor.get_action(data.next_observations)
-                qf1_next_target = qf1_target(data.next_observations, next_state_actions)
-                qf2_next_target = qf2_target(data.next_observations, next_state_actions)
+                # print(pre_rewards.shape)
 
-                # qf1_next_target = qf1(data.next_observations, next_state_actions)
-                # qf2_next_target = qf2(data.next_observations, next_state_actions)
+                re_loss = F.mse_loss(torch.mean(pre_rewards), torch.mean(mb_eps_rewards))
+                # print(loss_re)
 
-                min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - alpha * next_state_log_pi
-                next_v_value = (1 - data.dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
-                # next_q_value = pre_rewards.flatten() + (1 - data.dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
-                next_q_value = mb_rewards.flatten() + (1 - data.dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
-
-
-       
-            qf1_a_values = qf1(data.observations, data.actions).view(-1)
-            qf2_a_values = qf2(data.observations, data.actions).view(-1)
-
-            
-            # pre_re_1 = qf1_a_values - next_v_value
-            # pre_re_2 = qf2_a_values - next_v_value
-            # next_v_value1 = (1 - data.dones.flatten()) * args.gamma * (qf1_next_target).view(-1)
-            # next_v_value2 = (1 - data.dones.flatten()) * args.gamma * (qf2_next_target).view(-1)
+                re_optimizer.zero_grad()
+                re_loss.backward()
+                re_optimizer.step()
 
 
 
+                
+                with torch.no_grad():
+
+                    pre_rewards = reward_net(mb_obs, mb_act, mb_obs_next)
+
+                    next_state_actions, next_state_log_pi, _ = actor.get_action(mb_obs_next)
+                    qf1_next_target = qf1_target(mb_obs_next, next_state_actions)
+                    qf2_next_target = qf2_target(mb_obs_next, next_state_actions)
+
+                    # qf1_next_target = qf1(data.next_observations, next_state_actions)
+                    # qf2_next_target = qf2(data.next_observations, next_state_actions)
+
+                    min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - alpha * next_state_log_pi
+                    next_v_value = (1 - mb_dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
+                    # next_q_value = pre_rewards.flatten() + (1 - mb_dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
+                    next_q_value = mb_rewards.flatten() + (1 - mb_dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
 
 
-            pre_re_1 = qf1_a_values - next_v_value
-            pre_re_2 = qf2_a_values - next_v_value
+        
+                qf1_a_values = qf1(mb_obs, mb_act).view(-1)
+                qf2_a_values = qf2(mb_obs, mb_act).view(-1)
 
-            # a1= qf1_a_values - qf2_a_values.detach()
-            # a2= qf2_a_values - qf1_a_values.detach()
-
-            a1= pre_re_1 - mb_rewards.flatten()
-            a2= pre_re_2 - mb_rewards.flatten()
-
-
-            n = args.batch_size
-
-            r_mean1 = pre_re_1.mean()
-            r_var_single1 = ((pre_re_1 - r_mean1) ** 2).sum() / (n - 1)
-            r_var1 = (r_var_single1 ).mean()
-
-            r_mean2 = pre_re_2.mean()
-            r_var_single2 = ((pre_re_2 - r_mean2) ** 2).sum() / (n - 1)
-            r_var2 = (r_var_single2 ).mean()
-
-            a_mean1 = a1.mean()
-            a_var_single1 = ((a1 - a_mean1) ** 2).sum() / (n - 1)
-            a_var1 = (a_var_single1 ).mean()
-
-            a_mean2 = a2.mean()
-            a_var_single2 = ((a2 - a_mean2) ** 2).sum() / (n - 1)
-            a_var2 = (a_var_single2 ).mean()
+                
+                # pre_re_1 = qf1_a_values - next_v_value
+                # pre_re_2 = qf2_a_values - next_v_value
+                # next_v_value1 = (1 - data.dones.flatten()) * args.gamma * (qf1_next_target).view(-1)
+                # next_v_value2 = (1 - data.dones.flatten()) * args.gamma * (qf2_next_target).view(-1)
 
 
-            r_mean = mb_rewards.mean()
-            r_var_single = ((mb_rewards - r_mean) ** 2).sum() / (n - 1)
-            r_var = (r_var_single ).mean()
- 
-
-            # qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) - r_var1 - a_var1
-            # qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) - r_var2 - a_var2
-
-            qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) + args.r_coefficient * r_var1 + args.q_coefficient * torch.mean(0.5*pre_re_1**2-pre_re_1)
-            qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) + args.r_coefficient * r_var2 + args.q_coefficient * torch.mean(0.5*pre_re_2**2-pre_re_2)
 
 
-            
-            q1_loss = F.mse_loss(pre_re_1, mb_rewards.flatten())
-            q2_loss = F.mse_loss(pre_re_2, mb_rewards.flatten())
 
-            # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value))
-            # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value))
+                pre_re_1 = qf1_a_values - next_v_value
+                pre_re_2 = qf2_a_values - next_v_value
 
-            
-            # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value)) + 2* a_var1 +0.5 * torch.mean(pre_re_1**2)
-            # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value)) + 2* a_var2 + 0.5  * torch.mean(pre_re_2**2)
+                # a1= qf1_a_values - qf2_a_values.detach()
+                # a2= qf2_a_values - qf1_a_values.detach()
+
+                a1= pre_re_1 - mb_rewards.flatten()
+                a2= pre_re_2 - mb_rewards.flatten()
 
 
-            qf_loss = qf1_loss + qf2_loss
-            q_loss = q1_loss + q2_loss
+                n = args.batch_size
 
-            pre_re = torch.min(pre_re_1, pre_re_2)
+                r_mean1 = pre_re_1.mean()
+                r_var_single1 = ((pre_re_1 - r_mean1) ** 2).sum() / (n - 1)
+                r_var1 = (r_var_single1 ).mean()
 
-            q_r_loss = F.mse_loss(pre_re, pre_rewards.flatten())
+                r_mean2 = pre_re_2.mean()
+                r_var_single2 = ((pre_re_2 - r_mean2) ** 2).sum() / (n - 1)
+                r_var2 = (r_var_single2 ).mean()
+
+                a_mean1 = a1.mean()
+                a_var_single1 = ((a1 - a_mean1) ** 2).sum() / (n - 1)
+                a_var1 = (a_var_single1 ).mean()
+
+                a_mean2 = a2.mean()
+                a_var_single2 = ((a2 - a_mean2) ** 2).sum() / (n - 1)
+                a_var2 = (a_var_single2 ).mean()
+
+
+                r_mean = mb_rewards.mean()
+                r_var_single = ((mb_rewards - r_mean) ** 2).sum() / (n - 1)
+                r_var = (r_var_single ).mean()
+    
+
+                # qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) - r_var1 - a_var1
+                # qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) - r_var2 - a_var2
+
+                qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) + args.var_coefficient * r_var1 + args.q_coefficient * torch.mean(0.5*pre_re_1**2-pre_re_1)
+                qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) + args.var_coefficient * r_var2 + args.q_coefficient * torch.mean(0.5*pre_re_2**2-pre_re_2)
+
+
+                
+                q1_loss = F.mse_loss(pre_re_1, mb_rewards.flatten())
+                q2_loss = F.mse_loss(pre_re_2, mb_rewards.flatten())
+
+                # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value))
+                # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value))
+
+                
+                # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value)) + 2* a_var1 +0.5 * torch.mean(pre_re_1**2)
+                # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value)) + 2* a_var2 + 0.5  * torch.mean(pre_re_2**2)
+
+
+                qf_loss += qf1_loss + qf2_loss
+                q_loss += q1_loss + q2_loss
+
+                pre_re = torch.min(pre_re_1, pre_re_2)
+
+                q_r_loss += F.mse_loss(pre_re, pre_rewards.flatten())
 
             q_optimizer.zero_grad()
             qf_loss.backward()
@@ -402,20 +412,24 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 for _ in range(
                     args.policy_frequency
                 ):  # compensate for the delay by doing 'actor_update_interval' instead of 1
-                    pi, log_pi, _ = actor.get_action(data.observations)
-                    qf1_pi = qf1(data.observations, pi)
-                    qf2_pi = qf2(data.observations, pi)
-                    min_qf_pi = torch.min(qf1_pi, qf2_pi)
-                    actor_loss = ((alpha * log_pi) - min_qf_pi).mean()
+                    actor_loss = 0
+                    for i in range(args.n_eps):
+                        pi, log_pi, _ = actor.get_action(data[i].observations)
+                        qf1_pi = qf1(data[i].observations, pi)
+                        qf2_pi = qf2(data[i].observations, pi)
+                        min_qf_pi = torch.min(qf1_pi, qf2_pi)
+                        actor_loss += ((alpha * log_pi) - min_qf_pi).mean()
 
                     actor_optimizer.zero_grad()
                     actor_loss.backward()
                     actor_optimizer.step()
 
                     if args.autotune:
-                        with torch.no_grad():
-                            _, log_pi, _ = actor.get_action(data.observations)
-                        alpha_loss = (-log_alpha.exp() * (log_pi + target_entropy)).mean()
+                        alpha_loss = 0
+                        for i in range(args.n_eps):
+                            with torch.no_grad():
+                                _, log_pi, _ = actor.get_action(data[i].observations)
+                            alpha_loss += (-log_alpha.exp() * (log_pi + target_entropy)).mean()
 
                         a_optimizer.zero_grad()
                         alpha_loss.backward()
@@ -434,12 +448,12 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 writer.add_scalar("losses/qf2_values", qf2_a_values.mean().item(), global_step)
                 writer.add_scalar("losses/qf1_loss", qf1_loss.item(), global_step)
                 writer.add_scalar("losses/qf2_loss", qf2_loss.item(), global_step)
-                writer.add_scalar("losses/qf_loss", qf_loss.item() / 2.0, global_step)
-                writer.add_scalar("losses/q_loss", q_loss.item() / 2.0, global_step)
+                writer.add_scalar("losses/qf_loss", qf_loss.item() / 2.0/ args.n_eps, global_step)
+                writer.add_scalar("losses/q_loss", q_loss.item() / 2.0/ args.n_eps, global_step)
                 writer.add_scalar("losses/actor_loss", actor_loss.item(), global_step)
                 writer.add_scalar("losses/alpha", alpha, global_step)
                 writer.add_scalar("losses/re_loss", re_loss.item(), global_step)
-                writer.add_scalar("losses/q_r_loss", q_r_loss.item(), global_step)
+                writer.add_scalar("losses/q_r_loss", q_r_loss.item()/ args.n_eps, global_step)
                 writer.add_scalar("rewards/pre_re", pre_re.mean().item(), global_step)
                 writer.add_scalar("rewards/pre_rewards", pre_rewards.mean().item(), global_step)
                 writer.add_scalar("rewards/eps_rewards", mb_eps_rewards.mean().item(), global_step)
