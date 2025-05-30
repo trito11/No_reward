@@ -1,0 +1,125 @@
+{
+    "os": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.17",
+    "python": "3.8.20",
+    "heartbeatAt": "2025-05-17T14:27:25.610891",
+    "startedAt": "2025-05-17T14:27:22.920530",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "iq.py",
+    "codePath": "algorithm/iq.py",
+    "git": {
+        "remote": "https://github.com/trito11/No_reward.git",
+        "commit": "f4be3456e4f6b6d40665694e7bf534eca8d8a789"
+    },
+    "email": "trithuy2003@gmail.com",
+    "root": "/home/tri/offline_rl/No_reward",
+    "host": "Tri",
+    "username": "tri",
+    "executable": "/home/tri/miniconda3/envs/mujoco/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 2687.9939999999997,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2687.994,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 1006.853931427002,
+        "used": 40.54646301269531
+    },
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+            "memory_total": 6439305216
+        }
+    ],
+    "memory": {
+        "total": 7.6136016845703125
+    }
+}

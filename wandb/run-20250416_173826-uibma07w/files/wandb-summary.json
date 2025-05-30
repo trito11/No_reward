@@ -1,0 +1,1 @@
+{"global_step": 4994, "_timestamp": 1744799936.4156406, "_runtime": 29.408641576766968, "_step": 41, "charts/episodic_return": -23.725086212158203, "charts/episodic_length": 68.0, "_wandb": {"runtime": 7}}

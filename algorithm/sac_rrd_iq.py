@@ -36,7 +36,7 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
     # Algorithm specific arguments
-    env_id: str = "Ant-v4"
+    env_id: str = "Hopper-v4"
     """the environment id of the task"""
     total_timesteps: int = 3000000
     """total timesteps of the experiments"""
@@ -380,20 +380,15 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 # qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) - r_var1 - a_var1
                 # qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) - r_var2 - a_var2
 
-                qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) + args.var_coefficient * r_var1 + args.q_coefficient * torch.mean(0.5*pre_re_1**2-pre_re_1)
-                qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) + args.var_coefficient * r_var2 + args.q_coefficient * torch.mean(0.5*pre_re_2**2-pre_re_2)
+                qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) + 0.5 * torch.square(pre_re_1 - torch.mean(mb_eps_rewards)).mean() + args.var_coefficient * r_var1 + args.q_coefficient * torch.mean( 1/(2* torch.mean(mb_eps_rewards))  * pre_re_1**2-pre_re_1) + 2 * pre_re_1.mean()*mb_eps_rewards.mean() - 2 * (pre_re_1 * torch.mean(mb_eps_rewards)).mean()
+                qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) + 0.5 * torch.square(pre_re_2 - torch.mean(mb_eps_rewards)).mean() + args.var_coefficient * r_var2 + args.q_coefficient * torch.mean( 1/(2 * torch.mean(mb_eps_rewards)) * pre_re_2**2-pre_re_2) + 2 * pre_re_2.mean()*mb_eps_rewards.mean() - 2 * (pre_re_2 * torch.mean(mb_eps_rewards)).mean()
 
+                # qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) + 0.5 * torch.square(pre_re_1 - torch.mean(mb_eps_rewards)).mean() + args.var_coefficient * r_var1 + args.q_coefficient * torch.mean( 1/(2* torch.mean(mb_eps_rewards))  * pre_re_1**2-pre_re_1) 
+                # qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) + 0.5 * torch.square(pre_re_2 - torch.mean(mb_eps_rewards)).mean() + args.var_coefficient * r_var2 + args.q_coefficient * torch.mean( 1/(2 * torch.mean(mb_eps_rewards)) * pre_re_2**2-pre_re_2) 
 
                 
                 q1_loss = F.mse_loss(pre_re_1, mb_rewards.flatten())
                 q2_loss = F.mse_loss(pre_re_2, mb_rewards.flatten())
-
-                # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value))
-                # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value))
-
-                
-                # qf1_loss = F.mse_loss(torch.mean(qf1_a_values), torch.mean(next_q_value)) + 2* a_var1 +0.5 * torch.mean(pre_re_1**2)
-                # qf2_loss = F.mse_loss(torch.mean(qf2_a_values), torch.mean(next_q_value)) + 2* a_var2 + 0.5  * torch.mean(pre_re_2**2)
 
 
                 qf_loss += qf1_loss + qf2_loss
