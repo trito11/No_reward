@@ -1,0 +1,292 @@
+{
+    "os": "Linux-4.18.0-477.27.1.el8_8.x86_64-x86_64-with-glibc2.17",
+    "python": "3.8.20",
+    "heartbeatAt": "2025-06-03T05:41:41.453470",
+    "startedAt": "2025-06-03T05:41:40.824042",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--q_coefficient=0",
+        "--var_coefficient=0.01"
+    ],
+    "state": "running",
+    "program": "iq.py",
+    "codePath": "algorithm/iq.py",
+    "git": {
+        "remote": "https://github.com/trito11/No_reward.git",
+        "commit": "65be659dc331e5c06caa99baea26af8f6658f13e"
+    },
+    "email": null,
+    "root": "/gpfs/projects/ailab/tnguye11/tri/No_reward",
+    "host": "n0162.talapas.uoregon.edu",
+    "username": "tnguye11",
+    "executable": "/home/tnguye11/anaconda3/envs/mujoco/bin/python",
+    "cpu_count": 48,
+    "cpu_count_logical": 48,
+    "cpu_freq": {
+        "current": 3005.841229166667,
+        "min": 1500.0,
+        "max": 3630.809999999998
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.268,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.891,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.517,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.616,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.232,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.516,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.134,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.213,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3596.804,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.229,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.807,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.125,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.311,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.33,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.915,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.329,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3599.236,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 3598.906,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        },
+        {
+            "current": 2650.0,
+            "min": 1500.0,
+            "max": 3630.81
+        }
+    ],
+    "disk": {
+        "total": 39.99999237060547,
+        "used": 26.549652099609375
+    },
+    "gpu": "NVIDIA A100 80GB PCIe",
+    "gpu_count": 2,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA A100 80GB PCIe",
+            "memory_total": 85899345920
+        },
+        {
+            "name": "NVIDIA A100 80GB PCIe",
+            "memory_total": 85899345920
+        }
+    ],
+    "memory": {
+        "total": 503.0003547668457
+    }
+}

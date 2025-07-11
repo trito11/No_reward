@@ -1,0 +1,149 @@
+diff --git a/algorithm/iq.py b/algorithm/iq.py
+index afc21f1..71b8acf 100644
+--- a/algorithm/iq.py
++++ b/algorithm/iq.py
+@@ -64,9 +64,18 @@ class Args:
+     """Entropy regularization coefficient."""
+     autotune: bool = True
+     """automatic tuning of the entropy coefficient"""
+-    q_coefficient: float = 0
+ 
+-    var_coefficient: float = 1
++    loss_type: str = "swap"  # swap, min, ave
++    
++
++    var_coefficient: float = 0.01
++    qf_coefficient: float = 1
++    re_coefficient: float = 1
++    re_t_coefficient: float = 0.1
++    tar_coefficient: float = 0
++    r2_coefficient: float = 0.5
++
++    
+ 
+     max_eps_len:int = 100
+ 
+@@ -410,6 +419,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
+ 
+                 pre_re_1 = qf1_a_values.view(-1) - next_v_value_1
+                 pre_re_2 = qf2_a_values.view(-1) - next_v_value_2
++                pre_re_min = torch.min(pre_re_1, pre_re_2)
++                pre_re_ave = (pre_re_1 + pre_re_2)/2
++
+ 
+                 pre_re_1_t = qf1_a_values.view(-1) - (1 - mb_dones.flatten()) * args.gamma * (min_qf_next_target - alpha * next_state_log_pi).view(-1)
+                 pre_re_2_t = qf2_a_values.view(-1) - (1 - mb_dones.flatten()) * args.gamma * (min_qf_next_target - alpha * next_state_log_pi).view(-1)
+@@ -435,23 +447,51 @@ poetry run pip install "stable_baselines3==2.0.0a1"
+                 r_var = (r_var_single ).mean()
+     
+ 
+-                # qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1)) 
+-                # qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2)) 
+-                qf1_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1))  +  F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1_t)) + F.mse_loss(qf1_next, min_qf_next_target ) 
+-                qf2_loss = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2))  +  F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2_t)) + F.mse_loss(qf2_next, min_qf_next_target ) 
+ 
+-                
++                qf1_loss_reward = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1))  
++                qf2_loss_reward = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2))  
++
++                qf1_loss_reward_true = F.mse_loss(mb_eps_rewards, pre_re_1)  
++                qf2_loss_reward_true = F.mse_loss(mb_eps_rewards, pre_re_2)
++
++                qf1_loss_reward_t = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_1_t))
++                qf2_loss_reward_t = F.mse_loss(torch.mean(mb_eps_rewards), torch.mean(pre_re_2_t))
++
++                if args.loss_type =="min" : 
++                    qf1_loss = F.mse_loss(pre_re_1_t, pre_re_min.detach() )
++                    qf2_loss = F.mse_loss(pre_re_2_t, pre_re_min.detach() )
++                if args.loss_type =="ave" :
++                    qf1_loss = F.mse_loss(pre_re_1_t, pre_re_ave.detach() )
++                    qf2_loss = F.mse_loss(pre_re_2_t, pre_re_ave.detach() )
++                else: 
++                    qf1_loss = F.mse_loss(pre_re_1_t, pre_re_1.detach() )
++                    qf2_loss = F.mse_loss(pre_re_2_t, pre_re_2.detach() )
++
++
++
++                target_q_loss_1 = F.mse_loss(qf1_next, min_qf_next_target ) 
++                target_q_loss_2 = F.mse_loss(qf2_next, min_qf_next_target ) 
++
+                 q1_loss = F.mse_loss(pre_re_1, mb_rewards.flatten())
+                 q2_loss = F.mse_loss(pre_re_2, mb_rewards.flatten())
+ 
++                var_loss =  (r_var1 +  r_var2)
++                qf_loss_reward = qf1_loss_reward + qf2_loss_reward
++                qf_loss_reward_t = qf1_loss_reward_t + qf2_loss_reward_t
++                qf_loss = qf1_loss + qf2_loss
++                loss_r_true = qf1_loss_reward_true + qf2_loss_reward_true
++                target_q_loss = target_q_loss_1 + target_q_loss_2
++
++
+ 
+-                qf_loss += qf1_loss + qf2_loss + 0.1*(args.var_coefficient * r_var1 + args.var_coefficient * r_var2)
++                all_loss = args.qf_coefficient * qf_loss + args.re_coefficient * qf_loss_reward + args.re_t_coefficient * qf_loss_reward_t + \
++                args.tar_coefficient * target_q_loss + args.var_coefficient * var_loss +  args.r2_coefficient * pre_re_min.mean() ** 2  
+                 q_loss += q1_loss + q2_loss
+ 
+                 pre_re = torch.min(pre_re_1, pre_re_2)
+ 
+             double_q_optimizer.zero_grad()
+-            qf_loss.backward()
++            all_loss.backward()
+             double_q_optimizer.step()
+ 
+ 
+@@ -495,18 +535,16 @@ poetry run pip install "stable_baselines3==2.0.0a1"
+                 writer.add_scalar("losses/qf2_values", qf2_a_values.mean().item(), global_step)
+                 writer.add_scalar("losses/qf1_loss", qf1_loss.item(), global_step)
+                 writer.add_scalar("losses/qf2_loss", qf2_loss.item(), global_step)
++                writer.add_scalar("losses/qf_loss_reward", qf_loss_reward.item() / 2.0/ args.n_eps, global_step)
++                writer.add_scalar("losses/qf_loss_reward_t", qf_loss_reward_t.item() / 2.0/ args.n_eps, global_step)
+                 writer.add_scalar("losses/qf_loss", qf_loss.item() / 2.0/ args.n_eps, global_step)
+-                writer.add_scalar("losses/q_loss", q_loss.item() / 2.0/ args.n_eps, global_step)
++                writer.add_scalar("losses/q_loss", q_loss.item()  / 2.0/ args.n_eps, global_step)
++                writer.add_scalar("losses/target_q_loss", target_q_loss.item() / 2.0/ args.n_eps, global_step)
++                writer.add_scalar("losses/loss_r_true", loss_r_true.item() / 2.0/ args.n_eps, global_step)
++
+                 writer.add_scalar("losses/actor_loss", actor_loss.item(), global_step)
+                 writer.add_scalar("losses/alpha", alpha, global_step)
+-                # writer.add_scalar("losses/re_loss", re_loss.item(), global_step)
+-                # writer.add_scalar("losses/re_test_loss", re_test_loss.item(), global_step)
+-                # writer.add_scalar("losses/diff_re", diff_re.item(), global_step)
+-
+-
+-                # writer.add_scalar("losses/q_r_loss", q_r_loss.item()/ args.n_eps, global_step)
+-                # writer.add_scalar("rewards/pre_re", pre_re.mean().item(), global_step)
+-                # writer.add_scalar("rewards/pre_rewards", pre_rewards.mean().item(), global_step)
++    
+                 writer.add_scalar("rewards/eps_rewards", mb_eps_rewards.mean().item(), global_step)
+                 writer.add_scalar("rewards/batch_rewards", mb_rewards.mean().item(), global_step)
+                 writer.add_scalar("rewards/true_r_var", r_var.mean().item(), global_step)
+diff --git a/algorithm/wandb/latest-run b/algorithm/wandb/latest-run
+index 2d7807e..8182374 120000
+--- a/algorithm/wandb/latest-run
++++ b/algorithm/wandb/latest-run
+@@ -1 +1 @@
+-run-20250520_203221-c30nznxa
+\ No newline at end of file
++run-20250701_164005-ifcy5zq7
+\ No newline at end of file
+diff --git a/test.sh b/test.sh
+index ffadf43..65fdd53 100644
+--- a/test.sh
++++ b/test.sh
+@@ -4,7 +4,7 @@
+ #SBATCH --output=output_%j.out
+ #SBATCH --error=error_%j.err
+ #SBATCH --time=24:00:00
+-#SBATCH --mem=30000M
++#SBATCH --mem=3000M
+ #SBATCH --gpus-per-node=1
+ #SBATCH --nodes=1              
+ #SBATCH --ntasks=1           
+@@ -12,4 +12,6 @@
+ #SBATCH --cpus-per-task=1
+ #SBATCH --account=ailab    
+ 
++source /home/tnguye11/anaconda3/bin/activate RRD
++module load cuda/11.8
+ srun python a.py
